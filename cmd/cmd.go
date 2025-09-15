@@ -80,7 +80,6 @@ func RunDatabaseOperations() {
 
 	// 获取研发部门的用户信息
 	users, err := user.GetUsers(user.Wechat.DepartmentID, token)
-
 	if err != nil {
 		log.Fatalf("Failed to get users: %v", err)
 	}
@@ -98,7 +97,6 @@ var Wechat = &gcli.Command{
 	//	c.StrOpt(&RunOpts.config, "config", "c", "conf.toml", "配置文件路径,默认为conf.toml.如无移动配置文件则无需配置！")
 	//},
 	Func: func(c *gcli.Command, args []string) error { // 当命令被执行时调用该函数
-		user.LoadConfig() // 通过viper加载部门信息
 		RunDatabaseOperations()
 		return nil
 	},
@@ -170,6 +168,9 @@ func Command() {
 	app.Name = "SAP"
 	app.Logo = &gcli.Logo{Text: LOGO, Style: "info"}
 	app.Desc = "SQL Audit Platform"
+
+	user.LoadConfig() // 通过viper加载部门信息
+
 	app.Add(Migrate)
 	app.Add(RunServer)
 	app.Add(Fix)

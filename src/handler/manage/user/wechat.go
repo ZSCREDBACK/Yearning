@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -65,8 +66,8 @@ type UserListResponse struct {
 // User represents individual user details
 type User struct {
 	UserID string `json:"userid"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
+	Name   string `json:"name"` // 真实姓名
+	//Email  string `json:"email"` // 现在获取不到email，所以注释了
 }
 
 // GetAccessToken 调用企业微信 API 获取 access_token
@@ -136,10 +137,34 @@ func GetUsers(departmentID []string, accessToken string) ([]User, error) {
 
 // SaveUsersToDB 遍历用户 → 如果不存在则插入，否则更新
 func SaveUsersToDB(users []User, db *gorm.DB) {
+	// 定义默认权限组, 参考admin: {"ddl_source": [], "dml_source": [], "query_source": []}
+	defaultPerms, _ := json.Marshal(map[string][]string{
+		"ddl_source":   {},
+		"dml_source":   {},
+		"query_source": {},
+	})
+
+	// 判断是否存在默认部门（权限组），如果没有就进行创建
+	var wechatGroup model.CoreRoleGroup
+	err := db.Where("name = ?", Wechat.Department).First(&wechatGroup).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		wechatGroup = model.CoreRoleGroup{
+			Name:        Wechat.Department,
+			Permissions: defaultPerms,
+			GroupId:     uuid.New().String(),
+		}
+		if err := db.Create(&wechatGroup).Error; err != nil {
+			fmt.Printf("❌ Failed to create group: %v\n", err)
+			return
+		}
+		fmt.Printf("✅ Successfully created the group: %v\n", Wechat.Department)
+	} else if err != nil {
+		fmt.Printf("❌ Failed to query group: %v\n", err)
+		return
+	}
+
 	for _, user := range users {
 		var account model.CoreAccount
-
-		//fmt.Printf("DepartmentID: %+v\n", Wechat.DepartmentID)
 
 		err := db.Where("username = ?", user.UserID).First(&account).Error
 		if err != nil {
@@ -152,13 +177,19 @@ func SaveUsersToDB(users []User, db *gorm.DB) {
 					RealName:   user.Name,
 					//Email:      user.Email, // 2022.6.20 20:00:00 以后除了通信录以外的应用，调用接口不在返回邮箱以及企业邮箱字段，详见企业微信官网：通信录管理-成员管理-读取成员
 					Email:      "",
-					IsRecorder: 1,
+					IsRecorder: 2,
 				}
 
 				if err := db.Create(&account).Error; err != nil {
 					fmt.Printf("❌ Failed to create account for %s: %v\n", user.Name, err)
 				} else {
 					fmt.Printf("✅ Successfully created account for %s\n", user.Name)
+
+					// 创建用户成功后授权默认权限组
+					ix, _ := json.Marshal([]string{
+						wechatGroup.GroupId,
+					})
+					db.Create(&model.CoreGrained{Username: user.UserID, Group: ix})
 				}
 			} else {
 				fmt.Printf("❌ Error checking existing account for %s: %v\n", user.Name, err)

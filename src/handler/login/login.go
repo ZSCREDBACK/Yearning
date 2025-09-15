@@ -140,77 +140,7 @@ func UserRegister(c yee.Context) (err error) {
 
 }
 
-// 原版
-//func WechatGeneralLogin(c yee.Context) (err error) {
-//	// 从上下文中获取 loginData
-//	loginData, ok := c.Get("loginData").(loginForm) // 类型断言
-//	if !ok {
-//		return fmt.Errorf("could not retrieve login data from context")
-//	}
-//	//user := "admin"
-//	var account model.CoreAccount
-//	if model.DB().Where("username = ?", loginData.Username).First(&account).Error == gorm.ErrRecordNotFound { // ?
-//		if account.Username != loginData.Username {
-//			return c.JSON(http.StatusOK, common.ERR_COMMON_TEXT_MESSAGE(i18n.DefaultLang.Load(i18n.ER_LOGIN)))
-//		}
-//		// token, tokenErr := lib.JwtAuth(loginData.Username, account.Rule)
-//		token, tokenErr := factory.JwtAuth(factory.Token{ // ?
-//			Username: loginData.Username,
-//			RealName: account.RealName,
-//			IsRecord: account.IsRecorder == 1,
-//		})
-//		if tokenErr != nil {
-//			c.Logger().Error(tokenErr.Error())
-//			return
-//		}
-//		dataStore := map[string]string{
-//			"token": token,
-//			//"permissions": account.Rule,	// ?
-//			"real_name": account.RealName,
-//			"user":      loginData.Username,
-//		}
-//		return c.JSON(http.StatusOK, common.SuccessPayload(dataStore))
-//	}
-//	return c.JSON(http.StatusOK, common.ERR_COMMON_MESSAGE(errors.New(i18n.DefaultLang.Load(i18n.ER_LOGIN))))
-//}
-
-// 修改后
-//func WechatGeneralLogin(c yee.Context) (err error) {
-//	loginData, ok := c.Get("loginData").(loginForm)
-//	if !ok {
-//		return fmt.Errorf("could not retrieve login data from context")
-//	}
-//
-//	var account model.CoreAccount
-//	if err = model.DB().Where("username = ?", loginData.Username).First(&account).Error; err != nil {
-//		if errors.Is(err, gorm.ErrRecordNotFound) {
-//			// 用户不存在
-//			return c.JSON(http.StatusOK, common.ERR_COMMON_MESSAGE(errors.New(i18n.DefaultLang.Load(i18n.ER_LOGIN))))
-//		}
-//		// 其他数据库错误
-//		return err
-//	}
-//
-//	// 用户存在，生成 token
-//	token, tokenErr := factory.JwtAuth(factory.Token{
-//		Username: loginData.Username,
-//		RealName: account.RealName,
-//		IsRecord: account.IsRecorder == 1,
-//	})
-//	if tokenErr != nil {
-//		c.Logger().Error(tokenErr.Error())
-//		return
-//	}
-//
-//	dataStore := map[string]string{
-//		"token":     token,
-//		"real_name": account.RealName,
-//		"user":      loginData.Username,
-//	}
-//	return c.JSON(http.StatusOK, common.SuccessPayload(dataStore))
-//}
-
-// gpt优化+调试过
+// Wechat 通用登录
 func WechatGeneralLogin(c yee.Context) (err error) {
 	model.DefaultLogger.Debug("Enter WechatGeneralLogin")
 
@@ -237,7 +167,7 @@ func WechatGeneralLogin(c yee.Context) (err error) {
 	token, tokenErr := factory.JwtAuth(factory.Token{
 		Username: loginData.Username,
 		RealName: account.RealName,
-		IsRecord: account.IsRecorder == 1,
+		IsRecord: account.IsRecorder == 1, // ?
 	})
 	if tokenErr != nil {
 		log.Printf("[ERROR] JwtAuth failed: %v\n", tokenErr)
