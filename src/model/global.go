@@ -68,20 +68,10 @@ type oidc struct {
 	EmailKey    string
 }
 
-// 未使用
-type wechat struct {
-	CorpID          string
-	CorpSecret      string
-	DefaultPassword string
-	DepartmentID    []string
-	Department      string
-}
-
 type Config struct {
 	General general
 	Mysql   mysql
 	Oidc    oidc
-	Wechat  wechat // 未使用
 }
 
 var C Config
