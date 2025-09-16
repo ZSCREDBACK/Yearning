@@ -112,4 +112,7 @@ go.sum
 .idea/inspectionProfiles/Project_Default.xml
 .idea
 
+# 二进制文件
 juno
+sap
+Yearning-go
