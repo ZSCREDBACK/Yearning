@@ -231,6 +231,7 @@ func FetchBase(c yee.Context) (err error) {
 }
 
 // 抓取备份
+// gorm v1 写的
 func FetchBack(c yee.Context) (err error) {
 	u := new(_FetchBind)
 	if err = c.Bind(u); err != nil {
@@ -490,7 +491,6 @@ func FetchMergeDDL(c yee.Context) error {
 		}
 	}
 	return c.JSON(http.StatusOK, common.ERR_SOAR_ALTER_MERGE())
-
 }
 
 func FetchSQLInfo(c yee.Context) (err error) {

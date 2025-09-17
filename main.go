@@ -20,3 +20,9 @@ import (
 func main() {
 	cmd.Command()
 }
+
+//可以优化的地方
+//1.wechat代码中去除gorm v1
+//2.支持sql上传
+//3.支持备份？
+//4.支持清理备份

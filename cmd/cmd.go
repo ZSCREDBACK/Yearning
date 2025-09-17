@@ -50,7 +50,7 @@ func LoadConfig() {
 	}
 }
 
-// ?
+// RunDatabaseOperations 这里用的是v1的gorm
 func RunDatabaseOperations() {
 	LoadConfig()
 	//fmt.Printf("Loaded config: %+v\n", DBConfig)
@@ -64,8 +64,10 @@ func RunDatabaseOperations() {
 		DBConfig.Db,
 	)
 
-	// 注意这里使用了老版本的gorm就不要同时使用新版本的
+	// 注意这里使用了老版本v1的gorm就不要同时使用新版本v2的gorm
 	// 在这个函数内调用 model.DefaultLogger 就会导致编译失败
+	// 因为在使用 model 包内容前需要先加载 model.DBNew(RunOpts.config) 方法，但这个方法使用的是新版gorm
+	// 这个函数选择放这里，而不是放在model包中也是这个道理
 	db, err := gorm.Open("mysql", dsn) // 使用旧版的 Open 方法
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)

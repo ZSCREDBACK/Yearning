@@ -41,10 +41,16 @@ type DSN struct {
 }
 
 func initConfig(cPath string) {
+	//fmt.Printf("加载配置文件路径: %s\n", cPath)
+
 	_, err := toml.DecodeFile(cPath, &C)
 	if err != nil {
 		logger.DefaultLogger.Error(err)
 	}
+
+	//fmt.Printf("RpcAddr 加载结果: %+v\n", &C)
+	//fmt.Printf("RpcAddr 加载结果: %s\n", C.General.RpcAddr)
+
 	var jwt = os.Getenv("SECRET_KEY")
 	var lang = os.Getenv("Y_LANG")
 	if jwt != "" {
