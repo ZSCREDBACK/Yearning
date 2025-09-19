@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -33,6 +34,9 @@ var Commontext = `
 }
 `
 
+var remindIndex int64 // 全局计数器，保证每次调用都轮换
+
+// PusherMessages 推送工单审计进度
 func PusherMessages(msg model.Message, sv string) {
 	//请求地址模板
 
@@ -71,16 +75,28 @@ func PusherMessages(msg model.Message, sv string) {
 	defer resp.Body.Close()
 }
 
-// 发送提醒信息
-func SendDingRemind(msg model.Message, remind string) {
-	// 构造信息
-	var mx string
-
-	if remind == "admin" { // 自己处理admin的请求
-		remind = "zhangsichen"
+// SendDingRemind 推送工单处理的提醒信息
+func SendDingRemind(msg model.Message, reminds string) {
+	// 分割用户列表
+	remindList := strings.Split(reminds, ",")
+	for i := range remindList {
+		remindList[i] = strings.TrimSpace(remindList[i])
+		if remindList[i] == "admin" {
+			remindList[i] = "zhangsichen" // 特殊处理
+		}
 	}
-	mx = fmt.Sprintf(`{"msgtype": "text", "text": {"content": "📢 工单状态变更提醒，请及时处理。", "mentioned_list": "%s"}}`, remind)
-	model.DefaultLogger.Debugf("mx: %v", mx)
+
+	if len(remindList) == 0 {
+		model.DefaultLogger.Warn("没有可提醒的用户，跳过工单处理提醒。")
+	}
+
+	// 选择一个用户（轮询）
+	idx := atomic.AddInt64(&remindIndex, 1)
+	selected := remindList[int(idx)%len(remindList)]
+
+	// 构造信息
+	mx := fmt.Sprintf(`{"msgtype": "text", "text": {"content": "📢 工单状态变更提醒，请及时处理。", "mentioned_list": "%s"}}`, selected)
+	model.DefaultLogger.Debugf("发送提醒 -> 用户: %v, 消息: %v", selected, mx)
 
 	hook := msg.WebHook
 	if msg.Key != "" {
@@ -103,15 +119,14 @@ func SendDingRemind(msg model.Message, remind string) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	//发送请求
 	resp, err := client.Do(req)
-
 	if err != nil {
-		model.DefaultLogger.Errorf("resp:", err)
+		model.DefaultLogger.Errorf("❌ 请求错误: %v", err)
 		return
 	}
-	body, _ := io.ReadAll(resp.Body)
-	model.DefaultLogger.Debugf("resp:%v", string(body))
-	//关闭请求
 	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	model.DefaultLogger.Debugf("✅ 钉钉返回: %v", string(body))
 }
 
 func Sign(secret, hook string) string {

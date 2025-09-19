@@ -118,34 +118,24 @@ func (m *Msg) OrderBuild(status StatusType) *OrderTPL {
 	case ExecuteStatus:
 		tpl.pushTpl = dingMsgTplHandler("已执行", m.orderInfo)
 		tpl.mailTpl = fmt.Sprintf(TmplMail, "执行", m.orderInfo.WorkId, m.orderInfo.Username, model.GloOther.Domain, model.GloOther.Domain, "执行成功")
-		//model.DB().Select("real_name").Where("username = ?", m.orderInfo.Username).First(&user) // @提交人
-		//tpl.remind = fmt.Sprintf(TmplRemind, user.RealName)
 		tpl.remind = fmt.Sprintf(TmplRemind, m.orderInfo.Username)
 	case RejectStatus:
 		tpl.pushTpl = dingMsgTplHandler("已驳回", m.orderInfo)
 		tpl.mailTpl = fmt.Sprintf(TmplMail, "查询申请", m.orderInfo.WorkId, m.orderInfo.Username, model.GloOther.Domain, model.GloOther.Domain, "已驳回")
-		//model.DB().Select("real_name").Where("username = ?", m.orderInfo.Username).First(&user) // @提交人
-		//tpl.remind = fmt.Sprintf(TmplRemind, user.RealName)
 		tpl.remind = fmt.Sprintf(TmplRemind, m.orderInfo.Username)
 	case SummitStatus:
 		model.DB().Select("email").Where("username IN (?)", strings.Split(m.orderInfo.Assigned, ",")).Find(&m.ll.ToUser)
 		tpl.pushTpl = dingMsgTplHandler("已提交", m.orderInfo)
 		tpl.mailTpl = fmt.Sprintf(TmplMail, "提交", m.orderInfo.WorkId, m.orderInfo.Username, model.GloOther.Domain, model.GloOther.Domain, "已提交")
-		//model.DB().Select("real_name").Where("username = ?", m.orderInfo.Assigned).First(&user) // @下一步审核人
-		//tpl.remind = fmt.Sprintf(TmplRemind, user.RealName)
 		tpl.remind = fmt.Sprintf(TmplRemind, m.orderInfo.Assigned)
 	case FailedStatus:
 		tpl.pushTpl = dingMsgTplHandler("执行失败", m.orderInfo)
 		tpl.mailTpl = fmt.Sprintf(TmplMail, "执行", m.orderInfo.WorkId, m.orderInfo.Username, model.GloOther.Domain, model.GloOther.Domain, "执行失败")
-		//model.DB().Select("real_name").Where("username = ?", m.orderInfo.Username).First(&user) // @提交人
-		//tpl.remind = fmt.Sprintf(TmplRemind, user.RealName)
 		tpl.remind = fmt.Sprintf(TmplRemind, m.orderInfo.Username)
 	case NextStepStatus:
 		model.DB().Select("email").Where("username IN (?)", strings.Split(m.orderInfo.Assigned, ",")).Find(&m.ll.ToUser)
 		tpl.pushTpl = dingMsgTplHandler("已转交至下一操作人", m.orderInfo)
 		tpl.mailTpl = fmt.Sprintf(Tmpl2Mail, "转交", m.orderInfo.WorkId, m.orderInfo.Username, m.orderInfo.Assigned, model.GloOther.Domain, model.GloOther.Domain, "已转交至下一操作人")
-		//model.DB().Select("real_name").Where("username = ?", m.orderInfo.Assigned).First(&user) // @下一步审核人
-		//tpl.remind = fmt.Sprintf(TmplRemind, user.RealName)
 		tpl.remind = fmt.Sprintf(TmplRemind, m.orderInfo.Assigned)
 	case UndoStatus:
 		tpl.pushTpl = dingMsgTplHandler("已撤销", m.orderInfo)
@@ -170,9 +160,6 @@ func (tpl *OrderTPL) Push() {
 			if tpl.remind == "" {
 				go PusherMessages(tpl.ll.Message, tpl.pushTpl)
 			} else {
-				//go PusherMessages(tpl.ll.Message, tpl.pushTpl)
-				//go SendDingRemind(tpl.ll.Message, tpl.remind)
-
 				// 消息顺序发送
 				done := make(chan struct{})
 
