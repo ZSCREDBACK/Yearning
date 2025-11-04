@@ -82,7 +82,7 @@ func SendDingRemind(msg model.Message, reminds string) {
 	for i := range remindList {
 		remindList[i] = strings.TrimSpace(remindList[i])
 		if remindList[i] == "admin" {
-			remindList[i] = "zhangsichen" // 特殊处理
+			remindList[i] = "lanyuan" // 特殊处理
 		}
 	}
 
